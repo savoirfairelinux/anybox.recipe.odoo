@@ -33,13 +33,9 @@ except ImportError:
     from http import client as httplib  # Python 3
 from email import utils as email_utils
 try:
-    from urllib import urlretrieve  # Python 2
-except ImportError:
-    from urllib.request import urlretrieve  # Python 3
-try:
     from urlparse import urlparse  # Python 2
 except ImportError:
-    from urllib.parse import urlparse  # Python 3
+    from urllib import parse as urlparse  # Python 3
 from . import vcs
 from . import utils
 from .utils import option_splitlines, option_strip, conf_ensure_section
@@ -55,16 +51,6 @@ else:
 def rfc822_time(h):
     """Parse RFC 2822-formatted http header and return a time int."""
     email_utils.mktime_tz(email_utils.parsedate_tz(h))
-
-
-def get_content_type(msg):
-    """Return the mimetype of the HTTP message.
-    This is a helper to support Python 2 and 3.
-    """
-    try:
-        return msg.type
-    except AttributeError:
-        return msg.get_content_type()
 
 
 class MainSoftware(object):
@@ -594,7 +580,7 @@ class BaseRecipe(object):
             except IncompatibleConstraintError as exc:
                 missing = exc.args[2].project_name
             except UserError as exc:  # happens only for zc.buildout >= 2.0
-                missing = unicode(exc).split(os.linesep)[0].split()[-1]
+                missing = exc.message.split(os.linesep)[0].split()[-1]
                 missing = re.split(r'[=<>]', missing)[0]
             else:
                 break
@@ -678,9 +664,10 @@ class BaseRecipe(object):
                         self.read_release()
                     except Exception as exc:
                         raise EnvironmentError(
-                            'Problem while reading Odoo release.py: %s' % exc)
+                            'Problem while reading Odoo release.py: ' +
+                            exc.message)
             except ImportError as exception:
-                if 'babel' in unicode(exception):
+                if 'babel' in exception.message:
                     raise EnvironmentError(
                         'OpenERP setup.py has an unwanted import Babel.\n'
                         '=> First install Babel on your system or '
